@@ -1,1 +1,1 @@
-pyscopg2==66.0.2
+psycopg2-binary==2.9.6

@@ -1,5 +1,4 @@
 #Proyecto G
-
 #En la biblioteca del centro se manejan fichas de autores y libros. En la ficha de cada
 #autor se tiene el código de autor y el nombre. De cada libro se guarda el código, título,
 #ISBN, editorial y número de página. Un autor puede escribir varios libros, y un libro puede

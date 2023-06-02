@@ -1,17 +1,22 @@
-#Proyecto G
-#En la biblioteca del centro se manejan fichas de autores y libros. En la ficha de cada
-#autor se tiene el código de autor y el nombre. De cada libro se guarda el código, título,
-#ISBN, editorial y número de página. Un autor puede escribir varios libros, y un libro puede
-#ser escrito por varios autores. Un libro está formado por ejemplares. Cada ejemplar tiene
-#un código y una localización. Un libro tiene muchos ejemplares y un ejemplar pertenece
-#sólo a un libro.
-#Los usuarios de la biblioteca del centro también disponen de ficha en la biblioteca y sacan
-#ejemplares de ella. De cada usuario se guarda el código, nombre, dirección y teléfono.
-#Los ejemplares son prestados a los usuarios. Un usuario puede tomar prestados varios
-#ejemplares, y un ejemplar puede ser prestado a varios usuarios. De cada préstamos
-#interesa guardar la fecha de préstamo y la fecha de devolución”.
+# Proyecto G
+# En la biblioteca del centro se manejan fichas de autores y libros. En la ficha de cada
+# autor se tiene el código de autor y el nombre. De cada libro se guarda el código, título,
+# ISBN, editorial y número de página. Un autor puede escribir varios libros, y un libro puede
+# ser escrito por varios autores. Un libro está formado por ejemplares. Cada ejemplar tiene
+# un código y una localización. Un libro tiene muchos ejemplares y un ejemplar pertenece
+# sólo a un libro.
+# Los usuarios de la biblioteca del centro también disponen de ficha en la biblioteca y sacan
+# ejemplares de ella. De cada usuario se guarda el código, nombre, dirección y teléfono.
+# Los ejemplares son prestados a los usuarios. Un usuario puede tomar prestados varios
+# ejemplares, y un ejemplar puede ser prestado a varios usuarios. De cada préstamos
+# interesa guardar la fecha de préstamo y la fecha de devolución”.
+
+# TODO: Validate data
+# TODO: Close connections after each query inside functions (with statement)
+
 
 import psycopg2
+
 
 def crear_tablas(cursor):
     cursor.execute("""
@@ -58,9 +63,11 @@ def crear_tablas(cursor):
         )
     """)
 
+
 def insertar_autor(cursor):
     nombre = input("Ingrese el nombre del autor: ")
     cursor.execute("INSERT INTO Autores (nombre) VALUES (%s)", (nombre,))
+
 
 def insertar_libro(cursor):
     titulo = input("Ingrese el título del libro: ")
@@ -70,11 +77,13 @@ def insertar_libro(cursor):
     cursor.execute("INSERT INTO Libros (titulo, isbn, editorial, numero_pagina) VALUES (%s, %s, %s, %s)",
                    (titulo, isbn, editorial, numero_pagina))
 
+
 def insertar_ejemplar(cursor):
     codigo_libro = int(input("Ingrese el código del libro: "))
     localizacion = input("Ingrese la localización del ejemplar: ")
     cursor.execute("INSERT INTO Ejemplares (codigo_libro, localizacion) VALUES (%s, %s)",
                    (codigo_libro, localizacion))
+
 
 def insertar_usuario(cursor):
     nombre = input("Ingrese el nombre del usuario: ")
@@ -83,14 +92,19 @@ def insertar_usuario(cursor):
     cursor.execute("INSERT INTO Usuarios (nombre, direccion, telefono) VALUES (%s, %s, %s)",
                    (nombre, direccion, telefono))
 
+
 def realizar_prestamo(cursor):
     codigo_usuario = int(input("Ingrese el código del usuario: "))
     codigo_ejemplar = int(input("Ingrese el código del ejemplar: "))
     fecha_prestamo = input("Ingrese la fecha de préstamo (YYYY-MM-DD): ")
     fecha_devolucion = input("Ingrese la fecha de devolución (YYYY-MM-DD): ")
-    cursor.execute("INSERT INTO Prestamos (codigo_usuario, codigo_ejemplar, fecha_prestamo, fecha_devolucion) VALUES (%s, %s, %s, %s)",
-                   (codigo_usuario, codigo_ejemplar, fecha_prestamo, fecha_devolucion))
+    cursor.execute(
+        "INSERT INTO Prestamos (codigo_usuario, codigo_ejemplar, fecha_prestamo, fecha_devolucion) VALUES (%s, %s, %s, %s)",
+        (codigo_usuario, codigo_ejemplar, fecha_prestamo, fecha_devolucion))
 
+
+# TODO: Make a single text variable and print it instead of making 6 print statements
+# TODO: Function too long, refactor. A function should do one thing only
 def mostrar_datos(cursor):
     while True:
         print("\n----- DATOS -----")
@@ -118,7 +132,8 @@ def mostrar_datos(cursor):
             if libros:
                 print("Libros:")
                 for libro in libros:
-                    print(f"Código: {libro[0]}, Título: {libro[1]}, ISBN: {libro[2]}, Editorial: {libro[3]}, Número de páginas: {libro[4]}")
+                    print(
+                        f"Código: {libro[0]}, Título: {libro[1]}, ISBN: {libro[2]}, Editorial: {libro[3]}, Número de páginas: {libro[4]}")
             else:
                 print("No hay libros registrados.")
         elif opcion == "3":
@@ -136,7 +151,8 @@ def mostrar_datos(cursor):
             if usuarios:
                 print("Usuarios:")
                 for usuario in usuarios:
-                    print(f"Código: {usuario[0]}, Nombre: {usuario[1]}, Dirección: {usuario[2]}, Teléfono: {usuario[3]}")
+                    print(
+                        f"Código: {usuario[0]}, Nombre: {usuario[1]}, Dirección: {usuario[2]}, Teléfono: {usuario[3]}")
             else:
                 print("No hay usuarios registrados.")
         elif opcion == "5":
@@ -145,7 +161,8 @@ def mostrar_datos(cursor):
             if prestamos:
                 print("Préstamos:")
                 for prestamo in prestamos:
-                    print(f"Código: {prestamo[0]}, Código del usuario: {prestamo[1]}, Código del ejemplar: {prestamo[2]}, Fecha de préstamo: {prestamo[3]}, Fecha de devolución: {prestamo[4]}")
+                    print(
+                        f"Código: {prestamo[0]}, Código del usuario: {prestamo[1]}, Código del ejemplar: {prestamo[2]}, Fecha de préstamo: {prestamo[3]}, Fecha de devolución: {prestamo[4]}")
             else:
                 print("No hay préstamos registrados.")
         elif opcion == "6":
@@ -153,6 +170,8 @@ def mostrar_datos(cursor):
         else:
             print("Opción inválida. Inténtelo nuevamente.")
 
+
+# TODO: Same as above
 def borrar_datos(cursor):
     while True:
         print("\n----- BORRAR DATOS -----")
@@ -190,9 +209,11 @@ def borrar_datos(cursor):
         else:
             print("Opción inválida. Inténtelo nuevamente.")
 
+
 def guardar_cambios(conn):
     conn.commit()
     print("Cambios guardados correctamente.")
+
 
 def main():
     conn = psycopg2.connect(
@@ -206,6 +227,7 @@ def main():
 
     crear_tablas(cursor)
 
+    # TODO: Make it more elegant (break should be avoided)
     while True:
         print("\n----- MENÚ -----")
         print("1. Agregar autor")
@@ -244,6 +266,7 @@ def main():
 
     cursor.close()
     conn.close()
+
 
 if __name__ == '__main__':
     main()

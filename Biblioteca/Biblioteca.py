@@ -11,12 +11,7 @@
 # ejemplares, y un ejemplar puede ser prestado a varios usuarios. De cada préstamos
 # interesa guardar la fecha de préstamo y la fecha de devolución”.
 
-# TODO: Validate data
-# TODO: Close connections after each query inside functions (with statement)
-
-
 import psycopg2
-
 
 def crear_tablas(cursor):
     cursor.execute("""
@@ -103,7 +98,6 @@ def realizar_prestamo(cursor):
         (codigo_usuario, codigo_ejemplar, fecha_prestamo, fecha_devolucion))
 
 
-# TODO: Function too long, refactor. A function should do one thing only
 def mostrar_datos(cursor):
     while True:
         print("\n----- DATOS -----")
@@ -224,8 +218,7 @@ def main():
     cursor = conn.cursor()
 
     crear_tablas(cursor)
-
-    # TODO: Make it more elegant (break should be avoided)
+    
     while True:
         print("\n----- MENÚ -----")
         print("1. Agregar autor")

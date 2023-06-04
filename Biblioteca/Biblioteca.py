@@ -12,59 +12,48 @@
 # interesa guardar la fecha de préstamo y la fecha de devolución”.
 
 import psycopg2
+import os
 
-def crear_tablas(cursor):
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Autores (
-            codigo_autor SERIAL PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL
-        )
-    """)
+def conectar_bd():
+    while True:
+        try:
+            host = input("Ingrese el nombre del host de la base de datos: ")
+            database = input("Ingrese el nombre de la base de datos: ")
+            user = input("Ingrese el nombre de usuario de la base de datos: ")
+            password = input("Ingrese la contraseña de la base de datos: ")
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Libros (
-            codigo_libro SERIAL PRIMARY KEY,
-            titulo VARCHAR(100) NOT NULL,
-            isbn VARCHAR(20) NOT NULL,
-            editorial VARCHAR(100) NOT NULL,
-            numero_pagina INTEGER NOT NULL
-        )
-    """)
+            conn = psycopg2.connect(
+                host=host,
+                database=database,
+                user=user,
+                password=password
+            )
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Ejemplares (
-            codigo_ejemplar SERIAL PRIMARY KEY,
-            codigo_libro INTEGER REFERENCES Libros(codigo_libro),
-            localizacion VARCHAR(100) NOT NULL
-        )
-    """)
+            print("Conexión exitosa a la base de datos.")
+            input("Presione Enter para continuar...")
+            return conn
+        except psycopg2.Error as e:
+            print("Error al conectar a la base de datos:", e)
+            opcion = input("¿Desea volver a ingresar los parámetros de conexión? (s/n): ")
+            if opcion.lower() != "s":
+                return None
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Usuarios (
-            codigo_usuario SERIAL PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL,
-            direccion VARCHAR(100) NOT NULL,
-            telefono VARCHAR(20) NOT NULL
-        )
-    """)
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Prestamos (
-            codigo_prestamo SERIAL PRIMARY KEY,
-            codigo_usuario INTEGER REFERENCES Usuarios(codigo_usuario),
-            codigo_ejemplar INTEGER REFERENCES Ejemplares(codigo_ejemplar),
-            fecha_prestamo DATE NOT NULL,
-            fecha_devolucion DATE NOT NULL
-        )
-    """)
+def borrar_consola():
+    if os.name == "posix":
+        os.system("clear")
+    elif os.name == "nt":
+        os.system("cls")
 
 
 def insertar_autor(cursor):
+    borrar_consola()
     nombre = input("Ingrese el nombre del autor: ")
     cursor.execute("INSERT INTO Autores (nombre) VALUES (%s)", (nombre,))
 
 
 def insertar_libro(cursor):
+    borrar_consola()
     titulo = input("Ingrese el título del libro: ")
     isbn = input("Ingrese el ISBN del libro: ")
     editorial = input("Ingrese la editorial del libro: ")
@@ -74,6 +63,7 @@ def insertar_libro(cursor):
 
 
 def insertar_ejemplar(cursor):
+    borrar_consola()
     codigo_libro = int(input("Ingrese el código del libro: "))
     localizacion = input("Ingrese la localización del ejemplar: ")
     cursor.execute("INSERT INTO Ejemplares (codigo_libro, localizacion) VALUES (%s, %s)",
@@ -81,6 +71,7 @@ def insertar_ejemplar(cursor):
 
 
 def insertar_usuario(cursor):
+    borrar_consola()
     nombre = input("Ingrese el nombre del usuario: ")
     direccion = input("Ingrese la dirección del usuario: ")
     telefono = input("Ingrese el teléfono del usuario: ")
@@ -89,6 +80,7 @@ def insertar_usuario(cursor):
 
 
 def realizar_prestamo(cursor):
+    borrar_consola()
     codigo_usuario = int(input("Ingrese el código del usuario: "))
     codigo_ejemplar = int(input("Ingrese el código del ejemplar: "))
     fecha_prestamo = input("Ingrese la fecha de préstamo (YYYY-MM-DD): ")
@@ -100,6 +92,7 @@ def realizar_prestamo(cursor):
 
 def mostrar_datos(cursor):
     while True:
+        borrar_consola()
         print("\n----- DATOS -----")
         print("1. Mostrar autores")
         print("2. Mostrar libros")
@@ -162,10 +155,12 @@ def mostrar_datos(cursor):
             break
         else:
             print("Opción inválida. Inténtelo nuevamente.")
+        input("Presione Enter para continuar...")
 
 
 def borrar_datos(cursor):
     while True:
+        borrar_consola()
         print("\n----- BORRAR DATOS -----")
         print("1. Borrar autor")
         print("2. Borrar libro")
@@ -200,64 +195,66 @@ def borrar_datos(cursor):
             break
         else:
             print("Opción inválida. Inténtelo nuevamente.")
+        input("Presione Enter para continuar...")
 
 
-def guardar_cambios(conn):
-    conn.commit()
-    print("Cambios guardados correctamente.")
-
-
-def main():
-    conn = psycopg2.connect(
-        host="localhost",
-        database="biblioteca",
-        user="postgres",
-        password="password"
-    )
+def menu_principal():
+    conn = conectar_bd()
+    if conn is None:
+        return
 
     cursor = conn.cursor()
 
-    crear_tablas(cursor)
-    
     while True:
-        print("\n----- MENÚ -----")
-        print("1. Agregar autor")
-        print("2. Agregar libro")
-        print("3. Agregar ejemplar")
-        print("4. Agregar usuario")
-        print("5. Realizar préstamo")
-        print("6. Mostrar datos")
-        print("7. Borrar datos")
-        print("8. Guardar cambios")
-        print("9. Salir")
+        borrar_consola()
+        print("\n----- MENÚ PRINCIPAL -----")
+        print("1. Insertar datos")
+        print("2. Mostrar datos")
+        print("3. Borrar datos")
+        print("4. Salir")
 
         opcion = input("Ingrese la opción deseada: ")
 
         if opcion == "1":
-            insertar_autor(cursor)
+            while True:
+                borrar_consola()
+                print("\n----- INSERTAR DATOS -----")
+                print("1. Insertar autor")
+                print("2. Insertar libro")
+                print("3. Insertar ejemplar")
+                print("4. Insertar usuario")
+                print("5. Realizar préstamo")
+                print("6. Volver al menú principal")
+
+                opcion_insertar = input("Ingrese la opción deseada: ")
+
+                if opcion_insertar == "1":
+                    insertar_autor(cursor)
+                elif opcion_insertar == "2":
+                    insertar_libro(cursor)
+                elif opcion_insertar == "3":
+                    insertar_ejemplar(cursor)
+                elif opcion_insertar == "4":
+                    insertar_usuario(cursor)
+                elif opcion_insertar == "5":
+                    realizar_prestamo(cursor)
+                elif opcion_insertar == "6":
+                    break
+                else:
+                    print("Opción inválida. Inténtelo nuevamente.")
+                input("Presione Enter para continuar...")
         elif opcion == "2":
-            insertar_libro(cursor)
-        elif opcion == "3":
-            insertar_ejemplar(cursor)
-        elif opcion == "4":
-            insertar_usuario(cursor)
-        elif opcion == "5":
-            realizar_prestamo(cursor)
-        elif opcion == "6":
             mostrar_datos(cursor)
-        elif opcion == "7":
+        elif opcion == "3":
             borrar_datos(cursor)
-        elif opcion == "8":
-            guardar_cambios(conn)
-        elif opcion == "9":
-            print("Saliendo del programa...")
+        elif opcion == "4":
             break
         else:
             print("Opción inválida. Inténtelo nuevamente.")
+        input("Presione Enter para continuar...")
 
     cursor.close()
     conn.close()
 
 
-if __name__ == '__main__':
-    main()
+menu_principal()

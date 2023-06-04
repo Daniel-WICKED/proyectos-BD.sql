@@ -103,7 +103,6 @@ def realizar_prestamo(cursor):
         (codigo_usuario, codigo_ejemplar, fecha_prestamo, fecha_devolucion))
 
 
-# TODO: Make a single text variable and print it instead of making 6 print statements
 # TODO: Function too long, refactor. A function should do one thing only
 def mostrar_datos(cursor):
     while True:
@@ -171,7 +170,6 @@ def mostrar_datos(cursor):
             print("Opción inválida. Inténtelo nuevamente.")
 
 
-# TODO: Same as above
 def borrar_datos(cursor):
     while True:
         print("\n----- BORRAR DATOS -----")

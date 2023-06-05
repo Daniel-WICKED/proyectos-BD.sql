@@ -40,10 +40,7 @@ def conectar_bd():
 
 
 def borrar_consola():
-    if os.name == "posix":
-        os.system("clear")
-    elif os.name == "nt":
-        os.system("cls")
+    os.system("cls")
 
 
 def insertar_autor(cursor):

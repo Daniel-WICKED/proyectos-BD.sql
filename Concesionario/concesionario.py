@@ -11,312 +11,357 @@
 #que llevan los clientes. Un mecánico repara varios coches a lo largo del día, y un coche
 #puede ser reparado por varios mecánicos. Los mecánicos tienen un dni, nombre,
 #apellidos, fecha de contratación y salario. Se desea guardar también la fecha en la que se
-#repara cada vehículo y el número de horas que se tardado en arreglar cada automóvil”.
+#repara cada vehículo y el número de horas que se tardado en arreglar cada automóvil.
+
 
 import psycopg2
 import os
 
-def crear_tablas(cursor):
-    create_table_coches_nuevos = """
-    CREATE TABLE IF NOT EXISTS CochesNuevos (
-        Matricula VARCHAR PRIMARY KEY,
-        Modelo VARCHAR,
-        Marca VARCHAR,
-        Color VARCHAR,
-        Unidades INTEGER
-    )
-    """
-
-    create_table_coches_usados = """
-    CREATE TABLE IF NOT EXISTS CochesUsados (
-        Matricula VARCHAR PRIMARY KEY,
-        Modelo VARCHAR,
-        Marca VARCHAR,
-        Color VARCHAR,
-        Kilometros INTEGER
-    )
-    """
-
-    create_table_clientes = """
-    CREATE TABLE IF NOT EXISTS Clientes (
-        DNI VARCHAR PRIMARY KEY,
-        Nombre VARCHAR,
-        Apellidos VARCHAR,
-        Direccion VARCHAR,
-        Telefono VARCHAR
-    )
-    """
-
-    create_table_compras = """
-    CREATE TABLE IF NOT EXISTS Compras (
-        DNI_Cliente VARCHAR REFERENCES Clientes(DNI),
-        Matricula_Coche VARCHAR,
-        Fecha_Compra DATE,
-        PRIMARY KEY (DNI_Cliente, Matricula_Coche)
-    )
-    """
-
-    create_table_mecanicos = """
-    CREATE TABLE IF NOT EXISTS Mecanicos (
-        DNI VARCHAR PRIMARY KEY,
-        Nombre VARCHAR,
-        Apellidos VARCHAR,
-        Fecha_Contratacion DATE,
-        Salario DECIMAL
-    )
-    """
-
-    create_table_reparaciones = """
-    CREATE TABLE IF NOT EXISTS Reparaciones (
-        Matricula_Coche VARCHAR REFERENCES CochesNuevos(Matricula) ON DELETE CASCADE,
-        DNI_Mecanico VARCHAR REFERENCES Mecanicos(DNI) ON DELETE CASCADE,
-        Fecha_Reparacion DATE,
-        Horas_Trabajadas DECIMAL,
-        PRIMARY KEY (Matricula_Coche, DNI_Mecanico)
-    )
-    """
-
-    cursor.execute(create_table_coches_nuevos)
-    cursor.execute(create_table_coches_usados)
-    cursor.execute(create_table_clientes)
-    cursor.execute(create_table_compras)
-    cursor.execute(create_table_mecanicos)
-    cursor.execute(create_table_reparaciones)
-
-
-def conectar_bd():
-    while True:
-        try:
-            host = input("Ingrese el nombre del host de la base de datos: ")
-            database = input("Ingrese el nombre de la base de datos: ")
-            user = input("Ingrese el nombre de usuario de la base de datos: ")
-            password = input("Ingrese la contraseña de la base de datos: ")
-
-            conn = psycopg2.connect(
-                host=host,
-                database=database,
-                user=user,
-                password=password
-            )
-            print("Conexión exitosa a la base de datos.")
-            crear_tablas(conn.cursor())
-            input("Presione Enter para continuar...")   
-            return conn
-        
-        except psycopg2.Error as e:
-            print("Error al conectar a la base de datos:", e)
-            opcion = input("¿Desea volver a ingresar los parámetros de conexión? (s/n): ")
-            if opcion.lower() != "s":
-                return None
-
-
 def borrar_consola():
-    if os.name == "posix":
-        os.system("clear")
-    elif os.name == "nt":
-        os.system("cls")
+    os.system("cls")
 
+# Conexión a la base de datos PostgreSQL
+conn = psycopg2.connect(
+    host="localhost",
+    database="concesionario",
+    user="postgres",
+    password="password"
+)
 
-def insertar_coche_nuevo(cursor):
+# Crear tablas si no existen
+def crear_tablas():
+    try:
+        cursor = conn.cursor()
+        # Tabla coches
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS coches (
+                matricula VARCHAR(10) PRIMARY KEY,
+                modelo VARCHAR(50),
+                marca VARCHAR(50),
+                color VARCHAR(20),
+                tipo VARCHAR(10),
+                unidades_nuevas INTEGER,
+                kilometros INTEGER
+            )
+        """)
+        # Tabla clientes
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS clientes (
+                dni VARCHAR(10) PRIMARY KEY,
+                nombre VARCHAR(50),
+                apellidos VARCHAR(50),
+                direccion VARCHAR(100),
+                telefono VARCHAR(20)
+            )
+        """)
+        # Tabla fichas
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS fichas (
+                dni_cliente VARCHAR(10) REFERENCES clientes(dni),
+                matricula_coche VARCHAR(10) REFERENCES coches(matricula),
+                fecha_compra DATE,
+                PRIMARY KEY (dni_cliente, matricula_coche)
+            )
+        """)
+        # Tabla mecanicos
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS mecanicos (
+                dni VARCHAR(10) PRIMARY KEY,
+                nombre VARCHAR(50),
+                apellidos VARCHAR(50),
+                fecha_contratacion DATE,
+                salario DECIMAL(8, 2)
+            )
+        """)
+        # Tabla reparaciones
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS reparaciones (
+                dni_mecanico VARCHAR(10) REFERENCES mecanicos(dni),
+                matricula_coche VARCHAR(10) REFERENCES coches(matricula),
+                fecha_reparacion DATE,
+                horas_trabajadas DECIMAL(5, 2),
+                PRIMARY KEY (dni_mecanico, matricula_coche, fecha_reparacion)
+            )
+        """)
+        conn.commit()
+        cursor.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+
+# Función para insertar un coche en la base de datos
+def insertar_coche(matricula, modelo, marca, color, tipo, unidades_nuevas=None, kilometros=None):
     borrar_consola()
-    matricula = input("Ingrese la matrícula del coche: ")
-    modelo = input("Ingrese el modelo del coche: ")
-    marca = input("Ingrese la marca del coche: ")
-    color = input("Ingrese el color del coche: ")
-    unidades = int(input("Ingrese el número de unidades disponibles: "))
-    cursor.execute("INSERT INTO Coches (matricula, modelo, marca, color, tipo, unidades) VALUES (%s, %s, %s, %s, 'nuevo', %s)",
-                   (matricula, modelo, marca, color, unidades))
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO coches (matricula, modelo, marca, color, tipo, unidades_nuevas, kilometros)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (matricula, modelo, marca, color, tipo, unidades_nuevas, kilometros))
+        print("Coche insertado correctamente.")
+        input("Presione Enter para continuar...")
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
 
-
-def insertar_coche_usado(cursor):
+# Función para insertar un cliente en la base de datos
+def insertar_cliente(dni, nombre, apellidos, direccion, telefono):
     borrar_consola()
-    matricula = input("Ingrese la matrícula del coche: ")
-    modelo = input("Ingrese el modelo del coche: ")
-    marca = input("Ingrese la marca del coche: ")
-    color = input("Ingrese el color del coche: ")
-    kilometros = float(input("Ingrese el número de kilómetros recorridos: "))
-    cursor.execute("INSERT INTO Coches (matricula, modelo, marca, color, tipo, kilometros) VALUES (%s, %s, %s, %s, 'usado', %s)",
-                   (matricula, modelo, marca, color, kilometros))
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO clientes (dni, nombre, apellidos, direccion, telefono)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (dni, nombre, apellidos, direccion, telefono))
+        print("Cliente insertado correctamente.")
+        input("Presione Enter para continuar...")
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
 
-
-def insertar_cliente(cursor):
+# Función para crear una ficha de compra en la base de datos
+def crear_ficha_compra(dni_cliente, matricula_coche, fecha_compra):
     borrar_consola()
-    dni = input("Ingrese el DNI del cliente: ")
-    nombre = input("Ingrese el nombre del cliente: ")
-    apellidos = input("Ingrese los apellidos del cliente: ")
-    direccion = input("Ingrese la dirección del cliente: ")
-    telefono = input("Ingrese el teléfono del cliente: ")
-    cursor.execute("INSERT INTO Clientes (dni, nombre, apellidos, direccion, telefono) VALUES (%s, %s, %s, %s, %s)",
-                   (dni, nombre, apellidos, direccion, telefono))
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO fichas (dni_cliente, matricula_coche, fecha_compra)
+            VALUES (%s, %s, %s)
+        """, (dni_cliente, matricula_coche, fecha_compra))
+        print("Ficha de compra creada correctamente.")
+        input("Presione Enter para continuar...")
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
 
-
-def realizar_compra(cursor):
+# Función para insertar un mecánico en la base de datos
+def insertar_mecanico(dni, nombre, apellidos, fecha_contratacion, salario):
     borrar_consola()
-    dni_cliente = input("Ingrese el DNI del cliente: ")
-    matricula_coche = input("Ingrese la matrícula del coche: ")
-    fecha_compra = input("Ingrese la fecha de compra (YYYY-MM-DD): ")
-    cursor.execute(
-        "INSERT INTO Compras (dni_cliente, matricula_coche, fecha_compra) VALUES (%s, %s, %s)",
-        (dni_cliente, matricula_coche, fecha_compra))
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO mecanicos (dni, nombre, apellidos, fecha_contratacion, salario)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (dni, nombre, apellidos, fecha_contratacion, salario))
+        print("Mecánico insertado correctamente.")
+        input("Presione Enter para continuar...")
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
 
-
-def insertar_mecanico(cursor):
+# Función para registrar una reparación en la base de datos
+def registrar_reparacion(dni_mecanico, matricula_coche, fecha_reparacion, horas_trabajadas):
     borrar_consola()
-    dni = input("Ingrese el DNI del mecánico: ")
-    nombre = input("Ingrese el nombre del mecánico: ")
-    apellidos = input("Ingrese los apellidos del mecánico: ")
-    fecha_contratacion = input("Ingrese la fecha de contratación del mecánico (YYYY-MM-DD): ")
-    salario = float(input("Ingrese el salario del mecánico: "))
-    cursor.execute("INSERT INTO Mecanicos (dni, nombre, apellidos, fecha_contratacion, salario) VALUES (%s, %s, %s, %s, %s)",
-                   (dni, nombre, apellidos, fecha_contratacion, salario))
-
-
-def reparar_coche(cursor):
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO reparaciones (dni_mecanico, matricula_coche, fecha_reparacion, horas_trabajadas)
+            VALUES (%s, %s, %s, %s)
+        """, (dni_mecanico, matricula_coche, fecha_reparacion, horas_trabajadas))
+        print("Reparación registrada correctamente.")
+        input("Presione Enter para continuar...")
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+        input("Presione Enter para continuar...")
+# Función para mostrar los datos de la base de datos
+def mostrar_datos():
     borrar_consola()
-    matricula_coche = input("Ingrese la matrícula del coche a reparar: ")
-    dni_mecanico = input("Ingrese el DNI del mecánico encargado de la reparación: ")
-    fecha_reparacion = input("Ingrese la fecha de reparación (YYYY-MM-DD): ")
-    horas_trabajadas = float(input("Ingrese el número de horas trabajadas en la reparación: "))
-    cursor.execute(
-        "INSERT INTO Reparaciones (matricula_coche, dni_mecanico, fecha_reparacion, horas_trabajadas) VALUES (%s, %s, %s, %s)",
-        (matricula_coche, dni_mecanico, fecha_reparacion, horas_trabajadas))
+    try:
+        cursor = conn.cursor()
+        # Mostrar coches
+        print("Coches:")
+        cursor.execute("SELECT * FROM coches")
+        coches = cursor.fetchall()
+        for coche in coches:
+            print(coche)
+        print()
+        # Mostrar clientes
+        print("Clientes:")
+        cursor.execute("SELECT * FROM clientes")
+        clientes = cursor.fetchall()
+        for cliente in clientes:
+            print(cliente)
+        print()
+        # Mostrar fichas de compra
+        print("Fichas de compra:")
+        cursor.execute("SELECT * FROM fichas")
+        fichas = cursor.fetchall()
+        for ficha in fichas:
+            print(ficha)
+        print()
+        # Mostrar mecánicos
+        print("Mecánicos:")
+        cursor.execute("SELECT * FROM mecanicos")
+        mecanicos = cursor.fetchall()
+        for mecanico in mecanicos:
+            print(mecanico)
+        print()
+        # Mostrar reparaciones
+        print("Reparaciones:")
+        cursor.execute("SELECT * FROM reparaciones")
+        reparaciones = cursor.fetchall()
+        for reparacion in reparaciones:
+            print(reparacion)
+        cursor.close()
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    input("Presione Enter para continuar...")
+    
+# Función para borrar un coche de la base de datos
+def borrar_coche(matricula):
+    borrar_consola()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM coches WHERE matricula = %s", (matricula,))
+        print("Coche borrado correctamente.")
+        input("Presione Enter para continuar...")
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
 
+# Función para borrar un cliente de la base de datos
+def borrar_cliente(dni):
+    borrar_consola()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM clientes WHERE dni = %s", (dni,))
+        print("Cliente borrado correctamente.")
+        input("Presione Enter para continuar...")
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
 
-def mostrar_datos(cursor):
-    while True:
-        borrar_consola()
-        print("\n----- DATOS -----")
-        print("1. Mostrar coches nuevos")
-        print("2. Mostrar coches usados")
-        print("3. Mostrar clientes")
-        print("4. Mostrar compras")
-        print("5. Mostrar mecánicos")
-        print("6. Mostrar reparaciones")
-        print("7. Volver al menú principal")
+# Función para borrar un mecánico de la base de datos
+def borrar_mecanico(dni):
+    borrar_consola()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM mecanicos WHERE dni = %s", (dni,))
+        print("Mecánico borrado correctamente.")
+        input("Presione Enter para continuar...")
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
 
-        opcion = input("Ingrese la opción deseada: ")
+# Función para borrar todas las tablas de la base de datos
+def borrar_todo():
+    borrar_consola()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DROP TABLE IF EXISTS reparaciones")
+        cursor.execute("DROP TABLE IF EXISTS fichas")
+        cursor.execute("DROP TABLE IF EXISTS mecanicos")
+        cursor.execute("DROP TABLE IF EXISTS coches")
+        cursor.execute("DROP TABLE IF EXISTS clientes")
+        print("Se han borrado todas las tablas.")
+        input("Presione Enter para continuar...")
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
 
-        if opcion == "1":
-            cursor.execute("SELECT * FROM Coches WHERE tipo = 'nuevo'")
-            coches_nuevos = cursor.fetchall()
-            if coches_nuevos:
-                print("Coches nuevos:")
-                for coche in coches_nuevos:
-                    print(f"Matrícula: {coche[0]}, Modelo: {coche[1]}, Marca: {coche[2]}, Color: {coche[3]}, Unidades: {coche[6]}")
-            else:
-                print("No hay coches nuevos registrados.")
-        elif opcion == "2":
-            cursor.execute("SELECT * FROM Coches WHERE tipo = 'usado'")
-            coches_usados = cursor.fetchall()
-            if coches_usados:
-                print("Coches usados:")
-                for coche in coches_usados:
-                    print(f"Matrícula: {coche[0]}, Modelo: {coche[1]}, Marca: {coche[2]}, Color: {coche[3]}, Kilómetros: {coche[7]}")
-            else:
-                print("No hay coches usados registrados.")
-        elif opcion == "3":
-            cursor.execute("SELECT * FROM Clientes")
-            clientes = cursor.fetchall()
-            if clientes:
-                print("Clientes:")
-                for cliente in clientes:
-                    print(
-                        f"DNI: {cliente[0]}, Nombre: {cliente[1]}, Apellidos: {cliente[2]}, Dirección: {cliente[3]}, Teléfono: {cliente[4]}")
-            else:
-                print("No hay clientes registrados.")
-        elif opcion == "4":
-            cursor.execute("SELECT * FROM Compras")
-            compras = cursor.fetchall()
-            if compras:
-                print("Compras:")
-                for compra in compras:
-                    print(f"DNI Cliente: {compra[0]}, Matrícula Coche: {compra[1]}, Fecha Compra: {compra[2]}")
-            else:
-                print("No hay compras registradas.")
-        elif opcion == "5":
-            cursor.execute("SELECT * FROM Mecanicos")
-            mecanicos = cursor.fetchall()
-            if mecanicos:
-                print("Mecánicos:")
-                for mecanico in mecanicos:
-                    print(
-                        f"DNI: {mecanico[0]}, Nombre: {mecanico[1]}, Apellidos: {mecanico[2]}, Fecha Contratación: {mecanico[3]}, Salario: {mecanico[4]}")
-            else:
-                print("No hay mecánicos registrados.")
-        elif opcion == "6":
-            cursor.execute("SELECT * FROM Reparaciones")
-            reparaciones = cursor.fetchall()
-            if reparaciones:
-                print("Reparaciones:")
-                for reparacion in reparaciones:
-                    print(
-                        f"Matrícula Coche: {reparacion[0]}, DNI Mecánico: {reparacion[1]}, Fecha Reparación: {reparacion[2]}, Horas Trabajadas: {reparacion[3]}")
-            else:
-                print("No hay reparaciones registradas.")
-        elif opcion == "7":
-            break
-        else:
-            print("Opción inválida. Por favor, seleccione una opción válida.")
-
-        input("\nPresione Enter para continuar...")
-
-
+# Función para guardar los cambios en la base de datos
+def guardar_cambios():
+    borrar_consola()
+    conn.commit()
+    print("Cambios guardados correctamente.")
+    input("Presione Enter para continuar...")
+# Menú principal
 def menu_principal():
-    conn = conectar_bd()
-    if not conn:
-        return
-
-    cursor = conn.cursor()
-
+    
     while True:
         borrar_consola()
-        print("----- MENÚ PRINCIPAL -----")
-        print("1. Insertar coche nuevo")
-        print("2. Insertar coche usado")
-        print("3. Insertar cliente")
-        print("4. Realizar compra")
-        print("5. Insertar mecánico")
-        print("6. Reparar coche")
-        print("7. Mostrar datos")
-        print("8. Salir")
-
-        opcion = input("Ingrese la opción deseada: ")
+        print("----- CONCESIONARIO DE COCHES -----")
+        print("1. Insertar coche")
+        print("2. Insertar cliente")
+        print("3. Crear ficha de compra")
+        print("4. Insertar mecánico")
+        print("5. Registrar reparación")
+        print("6. Mostrar datos")
+        print("7. Borrar coche")
+        print("8. Borrar cliente")
+        print("9. Borrar mecánico")
+        print("10. Borrar todo (tablas)")
+        print("11. Guardar cambios")
+        print("0. Salir")
+        opcion = input("Seleccione una opción: ")
 
         if opcion == "1":
-            insertar_coche_nuevo(cursor)
-            conn.commit()
-            print("Coche nuevo insertado exitosamente.")
+            borrar_consola()
+            matricula = input("Matrícula del coche: ")
+            modelo = input("Modelo del coche: ")
+            marca = input("Marca del coche: ")
+            color = input("Color del coche: ")
+            tipo = input("Tipo del coche (Nuevo/Usado): ")
+            if tipo == "Nuevo":
+                unidades_nuevas = int(input("Número de unidades nuevas: "))
+                insertar_coche(matricula, modelo, marca, color, tipo, unidades_nuevas=unidades_nuevas)
+            elif tipo == "Usado":
+                kilometros = int(input("Número de kilómetros recorridos: "))
+                insertar_coche(matricula, modelo, marca, color, tipo, kilometros=kilometros)
+            else:
+                print("Tipo de coche no válido.")
+
         elif opcion == "2":
-            insertar_coche_usado(cursor)
-            conn.commit()
-            print("Coche usado insertado exitosamente.")
+            borrar_consola()
+            dni = input("DNI del cliente: ")
+            nombre = input("Nombre del cliente: ")
+            apellidos = input("Apellidos del cliente: ")
+            direccion = input("Dirección del cliente: ")
+            telefono = input("Teléfono del cliente: ")
+            insertar_cliente(dni, nombre, apellidos, direccion, telefono)
+
         elif opcion == "3":
-            insertar_cliente(cursor)
-            conn.commit()
-            print("Cliente insertado exitosamente.")
+            borrar_consola()
+            dni_cliente = input("DNI del cliente: ")
+            matricula_coche = input("Matrícula del coche: ")
+            fecha_compra = input("Fecha de compra (AAAA-MM-DD): ")
+            crear_ficha_compra(dni_cliente, matricula_coche, fecha_compra)
+
         elif opcion == "4":
-            realizar_compra(cursor)
-            conn.commit()
-            print("Compra realizada exitosamente.")
+            borrar_consola()
+            dni = input("DNI del mecánico: ")
+            nombre = input("Nombre del mecánico: ")
+            apellidos = input("Apellidos del mecánico: ")
+            fecha_contratacion = input("Fecha de contratación (AAAA-MM-DD): ")
+            salario = float(input("Salario del mecánico: "))
+            insertar_mecanico(dni, nombre, apellidos, fecha_contratacion, salario)
+
         elif opcion == "5":
-            insertar_mecanico(cursor)
-            conn.commit()
-            print("Mecánico insertado exitosamente.")
+            borrar_consola()
+            dni_mecanico = input("DNI del mecánico: ")
+            matricula_coche = input("Matrícula del coche: ")
+            fecha_reparacion = input("Fecha de reparación (AAAA-MM-DD): ")
+            horas_trabajadas = float(input("Número de horas trabajadas: "))
+            registrar_reparacion(dni_mecanico, matricula_coche, fecha_reparacion, horas_trabajadas)
+
         elif opcion == "6":
-            reparar_coche(cursor)
-            conn.commit()
-            print("Coche reparado exitosamente.")
+            mostrar_datos()
+
         elif opcion == "7":
-            mostrar_datos(cursor)
+            borrar_consola()
+            matricula = input("Matrícula del coche a borrar: ")
+            borrar_coche(matricula)
+
         elif opcion == "8":
+            borrar_consola()
+            dni = input("DNI del cliente a borrar: ")
+            borrar_cliente(dni)
+
+        elif opcion == "9":
+            borrar_consola()
+            dni = input("DNI del mecánico a borrar: ")
+            borrar_mecanico(dni)
+
+        elif opcion == "10":
+            borrar_consola()
+            confirmacion = input("¿Está seguro de borrar todas las tablas? (S/N): ")
+            if confirmacion.upper() == "S":
+                borrar_todo()
+
+        elif opcion == "11":
+            guardar_cambios()
+
+        elif opcion == "0":
+            conn.close()
+            print("¡Hasta luego!")
             break
+
         else:
-            print("Opción inválida. Por favor, seleccione una opción válida.")
+            print("Opción no válida. Intente de nuevo.")
 
-        input("\nPresione Enter para continuar...")
+# Crear tablas si no existen
+crear_tablas()
 
-    cursor.close()
-    conn.close()
-
-
+# Ejecutar el menú principal
 menu_principal()

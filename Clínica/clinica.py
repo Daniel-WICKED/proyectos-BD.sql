@@ -69,8 +69,8 @@ def crear_tablas(cursor):
         """)
         
         
-        print("Tablas creadas correctamente.")
-        time.sleep(0.5)
+        print("Tablas verificadas con éxito.")
+        time.sleep(1)
         print("Inciando el programa...")
         time.sleep(2)
     except psycopg2.Error as e:
@@ -285,22 +285,17 @@ def eliminar_todo(cursor):
     
 def mostrar_menu():
     borrar_consola()
-    print(" =====Administración Clínica San Patrás=====")
-    print(" ____________________________________________")
-    print("|INSERTAR DATOS |MOSTRAR DATOS |BUSCAR DATOS |")
-    print("|---------------|--------------|-------------|")
-    print("|1. paciente    |4. pacientes  |7. paciente  |")
-    print("|2. médico      |5. médicos    |8. médico    |")
-    print("|3. ingreso     |6. ingresos   |9. ingreso   |")
-    print("|_______________|______________|_____________|")
+    print(" ======================== Administración Clínica San Patrás =========================")
+    print(" ____________________________________________________________________________________")
+    print("|INSERTAR DATOS |MOSTRAR DATOS |BUSCAR DATOS |ELIMINAR DATOS                         |")
+    print("|---------------|--------------|-------------|---------------------------------------|")
+    print("|1. paciente    |4. pacientes  |7. paciente  |10. paciente                           |")
+    print("|2. médico      |5. médicos    |8. médico    |11. médico                             |")
+    print("|3. ingreso     |6. ingresos   |9. ingreso   |12. ingreso                            |")
+    print("|               |              |             |13. borrar todos los datos almacenados |")
+    print("|_______________|______________|_____________|_______________________________________|")
     print()
-    print("ELIMINAR DATOS:")
-    print("---------------")
-    print("10. paciente")
-    print("11. médico")
-    print("12. ingreso")
-    print("13. borrar todos los datos almacenados")
-    print("0. Salir")
+    print("0. Salir del programa")
 
 def main():
     conexion = conectar_bd()
@@ -349,7 +344,6 @@ def main():
 
     cursor.close()
     conexion.close()
-    borrar_consola()
     print("Saliendo del programa...")
 
 

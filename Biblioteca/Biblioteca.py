@@ -12,6 +12,7 @@
 # interesa guardar la fecha de préstamo y la fecha de devolución”.
 
 import psycopg2
+import os
 
 def conectar_bd():
     while True:
@@ -21,50 +22,70 @@ def conectar_bd():
             user = input("Ingrese el nombre de usuario de la base de datos: ")
             password = input("Ingrese la contraseña de la base de datos: ")
 
-def crear_tablas(cursor):
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Autores (
-            codigo_autor SERIAL PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL
-        )
-    """)
+            conn = psycopg2.connect(
+                host=host,
+                database=database,
+                user=user,
+                password=password
+            )
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Libros (
-            codigo_libro SERIAL PRIMARY KEY,
-            titulo VARCHAR(100) NOT NULL,
-            isbn VARCHAR(20) NOT NULL,
-            editorial VARCHAR(100) NOT NULL,
-            numero_pagina INTEGER NOT NULL
-        )
-    """)
+            print("Conexión exitosa a la base de datos.")
+            input("Presione Enter para continuar...")
+            return conn
+        except psycopg2.Error as e:
+            print("Error al conectar a la base de datos:", e)
+            opcion = input("¿Desea volver a ingresar los parámetros de conexión? (s/n): ")
+            if opcion.lower() != "s":
+                return None
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Ejemplares (
-            codigo_ejemplar SERIAL PRIMARY KEY,
-            codigo_libro INTEGER REFERENCES Libros(codigo_libro),
-            localizacion VARCHAR(100) NOT NULL
-        )
-    """)
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Usuarios (
-            codigo_usuario SERIAL PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL,
-            direccion VARCHAR(100) NOT NULL,
-            telefono VARCHAR(20) NOT NULL
-        )
-    """)
+def crear_tablas(conn):
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Autores (
+                codigo_autor SERIAL PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL
+            )
+        """)
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Prestamos (
-            codigo_prestamo SERIAL PRIMARY KEY,
-            codigo_usuario INTEGER REFERENCES Usuarios(codigo_usuario),
-            codigo_ejemplar INTEGER REFERENCES Ejemplares(codigo_ejemplar),
-            fecha_prestamo DATE NOT NULL,
-            fecha_devolucion DATE NOT NULL
-        )
-    """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Libros (
+                codigo_libro SERIAL PRIMARY KEY,
+                titulo VARCHAR(100) NOT NULL,
+                isbn VARCHAR(20) NOT NULL,
+                editorial VARCHAR(100) NOT NULL,
+                numero_pagina INTEGER NOT NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Ejemplares (
+                codigo_ejemplar SERIAL PRIMARY KEY,
+                codigo_libro INTEGER REFERENCES Libros(codigo_libro),
+                localizacion VARCHAR(100) NOT NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Usuarios (
+                codigo_usuario SERIAL PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL,
+                direccion VARCHAR(200) NOT NULL,
+                telefono VARCHAR(20) NOT NULL
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS Prestamos (
+                codigo_prestamo SERIAL PRIMARY KEY,
+                codigo_usuario INTEGER REFERENCES Usuarios(codigo_usuario),
+                codigo_ejemplar INTEGER REFERENCES Ejemplares(codigo_ejemplar),
+                fecha_prestamo DATE NOT NULL,
+                fecha_devolucion DATE NOT NULL
+            )
+        """)
 
         conn.commit()
         print("Tablas creadas exitosamente.")
@@ -260,32 +281,21 @@ def borrar_datos(cursor):
         input("Presione Enter para continuar...")
 
 
-def guardar_cambios(conn):
-    conn.commit()
-    print("Cambios guardados correctamente.")
-
-
-def main():
-    conn = psycopg2.connect(
-        host="localhost",
-        database="biblioteca",
-        user="postgres",
-        password="password"
-    )
+def menu_principal():
+    borrar_consola()
+    conn = conectar_bd()
+    if conn is None:
+        return
 
     cursor = conn.cursor()
 
     while True:
-        print("\n----- MENÚ -----")
-        print("1. Agregar autor")
-        print("2. Agregar libro")
-        print("3. Agregar ejemplar")
-        print("4. Agregar usuario")
-        print("5. Realizar préstamo")
-        print("6. Mostrar datos")
-        print("7. Borrar datos")
-        print("8. Guardar cambios")
-        print("9. Salir")
+        borrar_consola()
+        print("\n----- ADMINISTRACIÓN BIBLIOTECA -----")
+        print("1. Insertar datos")
+        print("2. Mostrar datos")
+        print("3. Borrar datos")
+        print("4. Salir")
 
         opcion = input("Ingrese la opción deseada: ")
 
@@ -321,10 +331,8 @@ def main():
             mostrar_datos(cursor)
         elif opcion == "3":
             borrar_datos(cursor)
-        elif opcion == "8":
-            guardar_cambios(conn)
-        elif opcion == "9":
-            print("Saliendo del programa...")
+        elif opcion == "4":
+            print ("Saliendo del programa...")
             break
         else:
             print("Opción inválida. Inténtelo nuevamente.")

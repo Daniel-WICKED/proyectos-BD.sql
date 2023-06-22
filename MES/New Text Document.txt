@@ -1,0 +1,21 @@
+En un centro de educación superior del MES se desea automatizar la gestión del 
+personal docente y estudiantil con que cuenta. De manera general se registra la 
+siguiente información: nombre, carnet de identidad, fecha de nacimiento, sexo y 
+dirección particular. De parte de los profesores se requiere guardar además la 
+cantidad de años de experiencia que posee en la docencia, la asignatura que imparte, 
+la categoría docente y si tiene alguna categoría científica o no. Además de
+los estudiantes se almacena la siguiente información: facultad, especialidad de 
+la carrera que escogió, año y grupo. Adicionalmente se cuenta con la provincia y 
+el número de cuarto de los estudiantes que se encuentran becados en la residencia 
+estudiantil del centro. La aplicación a desarrollar deberá permitir lo siguiente:
+
+a. Insertar personal docente o estudiantil al centro.
+
+b. Obtener la matrícula total de estudiantes del centro así como el total de profesores 
+del claustro.
+
+c. Listar todos los profesores del centro y dado una categoria docente.
+
+d. Promover a graduado a un estudiante registrado en el sistema donde se 
+registre su indice académico general, la carrera que curso y el nombre del rector 
+en funciones.

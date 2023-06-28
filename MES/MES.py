@@ -22,10 +22,10 @@ def crear_tablas(cursor):
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Profesores (
                 id SERIAL PRIMARY KEY,
-                carnet_identidad TEXT,
+                carnet_identidad INTEGER,
                 nombre TEXT,
                 fecha_nacimiento DATE,
-                sexo TEXT,
+                sexo VARCHAR(1),
                 direccion_particular TEXT,
                 anios_experiencia INTEGER,
                 asignatura TEXT,
@@ -37,18 +37,20 @@ def crear_tablas(cursor):
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Estudiantes (
                 id SERIAL PRIMARY KEY,
-                carnet_identidad VARCHAR(10),
-                nombre VARCHAR(100),
+                carnet_identidad INTEGER,
+                nombre TEXT,
                 fecha_nacimiento DATE,
                 sexo VARCHAR(1),
                 direccion VARCHAR(100),
                 facultad VARCHAR(100),
                 especialidad VARCHAR(100),
                 anio_curso INTEGER,
-                grupo VARCHAR(10),
+                grupo INTEGER,
                 provincia VARCHAR(100),
                 num_cuarto INTEGER,
-                becado BOOLEAN
+                becado BOOLEAN,
+                profesor_id INTEGER,
+                FOREIGN KEY (profesor_id) REFERENCES Profesores(id)
             )
         """)
         
@@ -57,7 +59,7 @@ def crear_tablas(cursor):
                 id SERIAL PRIMARY KEY,
                 estudiante_id INTEGER,
                 indice_academico FLOAT,
-                nombre_rector VARCHAR(100),
+                nombre_rector TEXT,
                 FOREIGN KEY (estudiante_id) REFERENCES Estudiantes(id)
             )
         """)
@@ -68,6 +70,7 @@ def crear_tablas(cursor):
         
     except psycopg2.Error as e:
         print("Error al crear las tablas:", e)
+        input("Pulse ENTER para continuar...")
 
 def insertar_profesor(cursor):
     while True:
@@ -114,6 +117,7 @@ def insertar_estudiante(cursor):
             especialidad = input("Especialidad: ")
             anio_curso = int(input("Año de estudio: "))
             grupo = input("Grupo: ")
+            profesor_id = int(input("ID del profesor que le imparte clases: "))
             provincia = input("Provincia: ")
             becado = input("¿Está becado? (S/N): ").upper() == "S"
             num_cuarto = None
@@ -123,10 +127,11 @@ def insertar_estudiante(cursor):
 
             cursor.execute("""
                 INSERT INTO Estudiantes (carnet_identidad, nombre, fecha_nacimiento, sexo, direccion, facultad,
-                especialidad, anio_curso, grupo, provincia, num_cuarto, becado)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                especialidad, anio_curso, grupo, provincia, num_cuarto, becado, profesor_id)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (carnet_identidad, nombre, fecha_nacimiento, sexo, direccion, facultad, especialidad, anio_curso,
-                  grupo, provincia, num_cuarto, becado))
+                  grupo, provincia, num_cuarto, becado, profesor_id))
+            
             cursor.connection.commit()
             print("Datos del estudiante guardados correctamente.")
             input("Presione ENTER para continuar")
@@ -313,7 +318,8 @@ def listar_estudiantes(cursor):
                 provincia = estudiante[10]
                 num_cuarto = estudiante[11]
                 becado = estudiante[12]
-
+                profesor = estudiante[13]
+                
                 print("Carnet de identidad:", carnet_identidad)
                 print("Nombre:", nombre)
                 print("Fecha de nacimiento:", fecha_nacimiento)
@@ -323,6 +329,7 @@ def listar_estudiantes(cursor):
                 print("Especialidad:", especialidad)
                 print("Año escolar:", anio_curso)
                 print("Grupo:", grupo)
+                print("Profesor:", profesor)
                 print("Provincia:", provincia)
                 if becado:
                     print("Número de cuarto:", num_cuarto)

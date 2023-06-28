@@ -1,0 +1,7 @@
+Diseñar un programa que automatice el proceso de gestión del personal de un centro de investigación de telecomunicaciones. 
+
+De cada investigador se debe tener nombre, edad, número de carnet de identidad, campo de acción (telemática, radio, redes, programación, electrónica) y grado académico (máster, doctorado o ninguno).
+
+El programa debe permitir añadir nuevos investigadores al centro, listarlos, modificar cualquiera de sus datos, buscar a algún investigador en específico y dar de baja a los mismos.
+
+También debe mostrar en cualquier momento la cantidad de investigadores con máster y doctorado del centro, así como los que carecen de cualquiera de esos grados académicos, además de la cantidad de investigadores presentes en cada una de las áreas de investigación.

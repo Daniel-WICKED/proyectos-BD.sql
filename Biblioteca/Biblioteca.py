@@ -15,6 +15,7 @@ import psycopg2
 import os
 
 def conectar_bd():
+    borrar_consola()
     while True:
         try:
             host = input("Ingrese el nombre del host de la base de datos: ")
@@ -28,9 +29,8 @@ def conectar_bd():
                 user=user,
                 password=password
             )
-
+            borrar_consola()
             print("Conexión exitosa a la base de datos.")
-            input("Presione Enter para continuar...")
             return conn
         except psycopg2.Error as e:
             print("Error al conectar a la base de datos:", e)
@@ -38,10 +38,7 @@ def conectar_bd():
             if opcion.lower() != "s":
                 return None
 
-
-def crear_tablas(conn):
-    cursor = conn.cursor()
-    
+def crear_tablas(cursor):
     try:
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Autores (
@@ -56,7 +53,8 @@ def crear_tablas(conn):
                 titulo VARCHAR(100) NOT NULL,
                 isbn VARCHAR(20) NOT NULL,
                 editorial VARCHAR(100) NOT NULL,
-                numero_pagina INTEGER NOT NULL
+                numero_pagina INTEGER NOT NULL,
+                codigo_autor INTEGER REFERENCES Autores(codigo_autor)
             )
         """)
 
@@ -86,15 +84,11 @@ def crear_tablas(conn):
                 fecha_devolucion DATE NOT NULL
             )
         """)
-
-        conn.commit()
-        print("Tablas creadas exitosamente.")
+        cursor.connection.commit()
+        print("Tablas comprobadas exitosamente.")
+        input("Presione Enter para continuar...")
     except psycopg2.Error as e:
         print("Error al crear las tablas:", e)
-        conn.rollback()
-
-    cursor.close()
-
 
 def borrar_consola():
     os.system("cls")
@@ -112,8 +106,7 @@ def insertar_autor(cursor):
     cursor.execute("INSERT INTO Autores (codigo_autor, nombre) VALUES (%s, %s)", (nuevo_codigo, nombre))
     cursor.connection.commit()
     print("Autor insertado correctamente. Código del autor:", nuevo_codigo)
-
-
+    input("Presione Enter para continuar...")
 
 def insertar_libro(cursor):
     borrar_consola()
@@ -121,17 +114,39 @@ def insertar_libro(cursor):
     isbn = input("Ingrese el ISBN del libro: ")
     editorial = input("Ingrese la editorial del libro: ")
     numero_pagina = int(input("Ingrese el número de páginas del libro: "))
-    cursor.execute("INSERT INTO Libros (titulo, isbn, editorial, numero_pagina) VALUES (%s, %s, %s, %s)",
-                   (titulo, isbn, editorial, numero_pagina))
-    cursor.connection.commit()
 
+    cursor.execute("SELECT MAX(codigo_libro) FROM Libros")
+    ultimo_codigo = cursor.fetchone()[0]
+    if ultimo_codigo is not None:
+        nuevo_codigo = ultimo_codigo + 1
+    else:
+        nuevo_codigo = 1
+
+    cursor.execute("""
+        INSERT INTO Libros (codigo_libro, titulo, isbn, editorial, numero_pagina)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (nuevo_codigo, titulo, isbn, editorial, numero_pagina))
+    cursor.connection.commit()
+    print("Libro registrado correctamente. Código del libro:", nuevo_codigo)
+
+    input("Presione Enter para continuar...")
+
+def asignar_autor_libro(cursor):
+    borrar_consola()
+    codigo_libro = int(input("Ingrese el código del libro: "))
+    codigo_autor = int(input("Ingrese el código del autor: "))
+    cursor.execute("UPDATE Libros SET codigo_autor = %s WHERE codigo_libro = %s", (codigo_autor, codigo_libro))
+    cursor.connection.commit()
+    print("Autor asignado correctamente al libro.")
+    
+    
 def insertar_ejemplar(cursor):
     borrar_consola()
     codigo_libro = int(input("Ingrese el código del libro: "))
     localizacion = input("Ingrese la localización del ejemplar: ")
-    cursor.execute("INSERT INTO Ejemplares (codigo_libro, localizacion) VALUES (%s, %s)",
-                   (codigo_libro, localizacion))
+    cursor.execute("INSERT INTO Ejemplares (codigo_libro, localizacion) VALUES (%s, %s)", (codigo_libro, localizacion))
     cursor.connection.commit()
+    input("Presione Enter para continuar...")
 
 def insertar_usuario(cursor):
     borrar_consola()
@@ -141,6 +156,7 @@ def insertar_usuario(cursor):
     cursor.execute("INSERT INTO Usuarios (nombre, direccion, telefono) VALUES (%s, %s, %s)",
                    (nombre, direccion, telefono))
     cursor.connection.commit()
+    input("Presione Enter para continuar...")
 
 def realizar_prestamo(cursor):
     borrar_consola()
@@ -152,6 +168,7 @@ def realizar_prestamo(cursor):
         "INSERT INTO Prestamos (codigo_usuario, codigo_ejemplar, fecha_prestamo, fecha_devolucion) VALUES (%s, %s, %s, %s)",
         (codigo_usuario, codigo_ejemplar, fecha_prestamo, fecha_devolucion))
     cursor.connection.commit()
+    input("Presione Enter para continuar...")
 
 def mostrar_datos(cursor):
     while True:
@@ -168,28 +185,37 @@ def mostrar_datos(cursor):
 
         if opcion == "1":
             borrar_consola()
-            cursor.execute("SELECT * FROM Autores")
+            cursor.execute("""
+                SELECT * FROM Autores
+            """)
             autores = cursor.fetchall()
+
             if autores:
                 print("Autores:")
                 for autor in autores:
-                    print(f"Código: {autor[0]}, Nombre: {autor[1]}")
+                    print(f"Código del autor: {autor[0]}, Nombre: {autor[1]}")
             else:
-                print("No hay autores registrados.")
+                print("No se encontraron autores.")
+        
         elif opcion == "2":
             borrar_consola()
-            cursor.execute("SELECT * FROM Libros")
+            cursor.execute("""
+                SELECT * FROM Libros
+            """)
             libros = cursor.fetchall()
+
             if libros:
                 print("Libros:")
                 for libro in libros:
-                    print(
-                        f"Código: {libro[0]}, Título: {libro[1]}, ISBN: {libro[2]}, Editorial: {libro[3]}, Número de páginas: {libro[4]}")
+                    print(f"Código del libro: {libro[0]}, Título: {libro[1]}, ISBN: {libro[2]}, Editorial: {libro[3]}, Número de páginas: {libro[4]}, Código del autor: {libro[5]}")
             else:
-                print("No hay libros registrados.")
+                print("No se encontraron libros.")
+
         elif opcion == "3":
             borrar_consola()
-            cursor.execute("SELECT * FROM Ejemplares")
+            cursor.execute("""
+                SELECT * FROM Ejemplares
+            """)
             ejemplares = cursor.fetchall()
             if ejemplares:
                 print("Ejemplares:")
@@ -197,34 +223,38 @@ def mostrar_datos(cursor):
                     print(f"Código: {ejemplar[0]}, Código del libro: {ejemplar[1]}, Localización: {ejemplar[2]}")
             else:
                 print("No hay ejemplares registrados.")
+
         elif opcion == "4":
             borrar_consola()
-            cursor.execute("SELECT * FROM Usuarios")
+            cursor.execute("""
+                SELECT * FROM Usuarios
+            """)
             usuarios = cursor.fetchall()
             if usuarios:
                 print("Usuarios:")
                 for usuario in usuarios:
-                    print(
-                        f"Código: {usuario[0]}, Nombre: {usuario[1]}, Dirección: {usuario[2]}, Teléfono: {usuario[3]}")
+                    print(f"Código: {usuario[0]}, Nombre: {usuario[1]}, Dirección: {usuario[2]}, Teléfono: {usuario[3]}")
             else:
                 print("No hay usuarios registrados.")
+
         elif opcion == "5":
             borrar_consola()
-            cursor.execute("SELECT * FROM Prestamos")
+            cursor.execute("""
+                SELECT * FROM Prestamos
+            """)
             prestamos = cursor.fetchall()
             if prestamos:
                 print("Préstamos:")
                 for prestamo in prestamos:
-                    print(
-                        f"Código: {prestamo[0]}, Código del usuario: {prestamo[1]}, Código del ejemplar: {prestamo[2]}, Fecha de préstamo: {prestamo[3]}, Fecha de devolución: {prestamo[4]}")
+                    print(f"Código: {prestamo[0]}, Código del usuario: {prestamo[1]}, Código del ejemplar: {prestamo[2]}, Fecha de préstamo: {prestamo[3]}, Fecha de devolución: {prestamo[4]}")
             else:
                 print("No hay préstamos registrados.")
+
         elif opcion == "6":
             break
         else:
             print("Opción inválida. Inténtelo nuevamente.")
-        input("Presione Enter para continuar...")
-
+        input("Presione Enter para volver...")
 
 def borrar_datos(cursor):
     while True:
@@ -245,6 +275,7 @@ def borrar_datos(cursor):
             cursor.execute("DELETE FROM Autores WHERE codigo_autor = %s", (codigo_autor,))
             print("Autor borrado correctamente.") 
             cursor.connection.commit()
+            input("Presione Enter para continuar...")
             
         elif opcion == "2":
             borrar_consola()
@@ -252,13 +283,15 @@ def borrar_datos(cursor):
             cursor.execute("DELETE FROM Libros WHERE codigo_libro = %s", (codigo_libro,))
             print("Libro borrado correctamente.")
             cursor.connection.commit()
-           
+            input("Presione Enter para continuar...")
+            
         elif opcion == "3":
             borrar_consola()
             codigo_ejemplar = int(input("Ingrese el código del ejemplar a borrar: "))
             cursor.execute("DELETE FROM Ejemplares WHERE codigo_ejemplar = %s", (codigo_ejemplar,))
             print("Ejemplar borrado correctamente.")
             cursor.connection.commit()
+            input("Presione Enter para continuar...")
             
         elif opcion == "4":
             borrar_consola()
@@ -266,6 +299,7 @@ def borrar_datos(cursor):
             cursor.execute("DELETE FROM Usuarios WHERE codigo_usuario = %s", (codigo_usuario,))
             print("Usuario borrado correctamente.")
             cursor.connection.commit()
+            input("Presione Enter para continuar...")
            
         elif opcion == "5":
             borrar_consola()
@@ -273,12 +307,13 @@ def borrar_datos(cursor):
             cursor.execute("DELETE FROM Prestamos WHERE codigo_prestamo = %s", (codigo_prestamo,))
             print("Préstamo borrado correctamente.")
             cursor.connection.commit()
+            input("Presione Enter para continuar...")
            
         elif opcion == "6":
             break
         else:
             print("Opción inválida. Inténtelo nuevamente.")
-        input("Presione Enter para continuar...")
+            input("Presione Enter para continuar...")
 
 
 def menu_principal():
@@ -288,14 +323,15 @@ def menu_principal():
         return
 
     cursor = conn.cursor()
-
+    crear_tablas(cursor)
     while True:
         borrar_consola()
         print("\n----- ADMINISTRACIÓN BIBLIOTECA -----")
         print("1. Insertar datos")
-        print("2. Mostrar datos")
-        print("3. Borrar datos")
-        print("4. Salir")
+        print("2. Asignar autor a un libro")
+        print("3. Mostrar datos")
+        print("4. Borrar datos")
+        print("5. Salir")
 
         opcion = input("Ingrese la opción deseada: ")
 
@@ -326,17 +362,19 @@ def menu_principal():
                     break
                 else:
                     print("Opción inválida. Inténtelo nuevamente.")
-                input("Presione Enter para continuar...")
+                    input("Presione Enter para continuar...")
         elif opcion == "2":
-            mostrar_datos(cursor)
+            asignar_autor_libro(cursor)
         elif opcion == "3":
-            borrar_datos(cursor)
+            mostrar_datos(cursor)
         elif opcion == "4":
+            borrar_datos(cursor)
+        elif opcion == "5":
             print ("Saliendo del programa...")
             break
         else:
             print("Opción inválida. Inténtelo nuevamente.")
-        input("Presione Enter para continuar...")
+            input("Presione Enter para continuar...")
 
     cursor.close()
     conn.close()

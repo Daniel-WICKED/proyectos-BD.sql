@@ -1,0 +1,10 @@
+Proyecto 9
+Diseñar un Sistema de Base de Datos que gestione toda la información bibliográfica asociada a un proyecto de investigación, desarrollo e innovación tecnológica como herramienta de utilidad para las investigaciones. La base de datos contendrá la información disponible en forma de objetos digitales por temas y subtemas. 
+Datos bibliográficos del objeto digital: Nombre, Autor, Fecha de Publicación, lugar de publicación, tema, subtema, ISBN, ISSN, revisar todos los campos de Zotero.
+Emplear Datos de persona.
+Datos del Autor
+Editorial.
+Solo podrán tener acceso las personas registradas en el sistema.
+La universidad cuenta con libros tanto originales como copias
+Solamente podrán descargar materiales los usuarios acreditados al sistema.
+Nota: Los temas que se usarán para la plataforma son los siguientes: Computación de Alto Rendimiento, Deep learning, Redes Neuronales Convolucionales, Procesamiento Digital de Imágenes, Visión por computadoras, Reconocimiento de Patrones.

@@ -1,0 +1,13 @@
+En la clinica veterinaria de Zoológico Nacional de Cuba se desea automatizar la atención de todos sus animales. 
+De cada animal se registra el código, el hábitat, el nombre, el sexo, la edad y el motivo por el cual ingresan. 
+En el caso de los peces y anfibios se guardan además los siguientes datos relativos al entorno acuático en el 
+que habitan: dureza, temperatura y salinidad del agua. En cuanto a los mamíferos se almacena también su peso, 
+el tipo de dieta que requiere y si son nacidos en cautiverio o no. Finalmente están los reptiles de los cuales 
+se necesita almacenar su peso, longitud y si son marinos o terrestres. La aplicación a desarrollar deberá permitir 
+lo siguiente:
+a. Insertar un animal a la clinica.
+b. Darle baja a un animal registrado en la clínica.
+c. Atender a un animal registrado en la clínica donde se registre la fecha de la consulta, el nombre del veterinario 
+que lo atendió, el tipo de consulta (rutinaria o por enfermedad) y la descripción del tratamiento en caso de ser necesario.
+d. Listar los animales registrados en la clínica organizados por tipo y a partir de un tipo especificado por el usuario.
+e. La salva y carga de la información gestionada en la aplicación en uno o varios ficheros.

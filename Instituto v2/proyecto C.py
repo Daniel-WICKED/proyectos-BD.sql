@@ -23,7 +23,7 @@ def crear_tablas(cursor):
     try:
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Profesores (
-                dni VARCHAR(10) PRIMARY KEY,
+                dni VARCHAR(15) PRIMARY KEY,
                 nombre VARCHAR(100),
                 direccion VARCHAR(100),
                 telefono VARCHAR(20)
@@ -79,7 +79,7 @@ def crear_tablas(cursor):
         
     except psycopg2.Error as e:
         print("Error al crear las tablas:", e)
-    
+        input("Presione ENTER para continuar...")
 
 def insertar_profesor(cursor):
     os.system("cls")

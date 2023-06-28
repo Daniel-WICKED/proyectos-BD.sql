@@ -61,54 +61,64 @@ def crear_tablas(cursor):
        
     except psycopg2.Error as e:
         print("Error al crear las tablas:", e)
-        
+        os.system("pause")
 
 def insertar_paciente(cursor):
     os.system("cls")
-    nombre = input("Ingrese el nombre del paciente: ")
-    apellidos = input("Ingrese los apellidos del paciente: ")
-    direccion = input("Ingrese la dirección del paciente: ")
-    poblacion = input("Ingrese la población del paciente: ")
-    provincia = input("Ingrese la provincia del paciente: ")
-    codigo_postal = input("Ingrese el código postal del paciente: ")
-    telefono = input("Ingrese el teléfono del paciente: ")
-    fecha_nacimiento = input("Ingrese la fecha de nacimiento del paciente (YYYY-MM-DD): ")
-    cursor.execute("""
-        INSERT INTO Pacientes (nombre, apellidos, direccion, poblacion, provincia, codigo_postal, telefono, fecha_nacimiento)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-    """, (nombre, apellidos, direccion, poblacion, provincia, codigo_postal, telefono, fecha_nacimiento))
-    cursor.connection.commit()
-    print("Paciente insertado correctamente.")
-
+    try:
+        nombre = input("Ingrese el nombre del paciente: ")
+        apellidos = input("Ingrese los apellidos del paciente: ")
+        direccion = input("Ingrese la dirección del paciente: ")
+        poblacion = input("Ingrese la población del paciente: ")
+        provincia = input("Ingrese la provincia del paciente: ")
+        codigo_postal = input("Ingrese el código postal del paciente: ")
+        telefono = input("Ingrese el teléfono del paciente: ")
+        fecha_nacimiento = input("Ingrese la fecha de nacimiento del paciente (YYYY-MM-DD): ")
+        cursor.execute("""
+            INSERT INTO Pacientes (nombre, apellidos, direccion, poblacion, provincia, codigo_postal, telefono, fecha_nacimiento)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (nombre, apellidos, direccion, poblacion, provincia, codigo_postal, telefono, fecha_nacimiento))
+        cursor.connection.commit()
+        print("Paciente insertado correctamente.")
+    except psycopg2.Error as e:
+        print("Error:")
+    input("pulse ENTER para continuar")     
 
 def insertar_medico(cursor):
     os.system("cls")
-    nombre = input("Ingrese el nombre del médico: ")
-    apellido = input("Ingrese el apellido del médico: ")
-    telefono = input("Ingrese el teléfono del médico: ")
-    especialidad = input("Ingrese la especialidad del médico: ")
-    cursor.execute("""
-        INSERT INTO Medicos (nombre, apellido, telefono, especialidad)
-        VALUES (%s, %s, %s, %s)
-    """, (nombre, apellido, telefono, especialidad))
-    cursor.connection.commit()
-    print("Médico insertado correctamente.")
-
+    try:
+        nombre = input("Ingrese el nombre del médico: ")
+        apellido = input("Ingrese el apellido del médico: ")
+        telefono = input("Ingrese el teléfono del médico: ")
+        especialidad = input("Ingrese la especialidad del médico: ")
+        cursor.execute("""
+            INSERT INTO Medicos (nombre, apellidos, telefono, especialidad)
+            VALUES (%s, %s, %s, %s)
+        """, (nombre, apellido, telefono, especialidad))
+        cursor.connection.commit()
+        print("Médico insertado correctamente.")
+        
+    except psycopg2.Error as e:
+        print("Error:")
+    input("pulse ENTER para continuar")   
 
 def insertar_ingreso(cursor):
     os.system("cls")
-    codigo_paciente = input("Ingrese el código del paciente: ")
-    codigo_medico = input("Ingrese el código del médico: ")
-    numero_habitacion = input("Ingrese el número de habitación: ")
-    numero_cama = input("Ingrese el número de cama: ")
-    fecha_ingreso = input("Ingrese la fecha de ingreso (YYYY-MM-DD): ")
-    cursor.execute("""
-        INSERT INTO Ingresos (codigo_paciente, codigo_medico, numero_habitacion, numero_cama, fecha_ingreso)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (codigo_paciente, codigo_medico, numero_habitacion, numero_cama, fecha_ingreso))
-    cursor.connection.commit()
-    print("Ingreso registrado correctamente.")
-
+    try:
+        codigo_paciente = input("Ingrese el código del paciente: ")
+        codigo_medico = input("Ingrese el código del médico: ")
+        numero_habitacion = input("Ingrese el número de habitación: ")
+        numero_cama = input("Ingrese el número de cama: ")
+        fecha_ingreso = input("Ingrese la fecha de ingreso (YYYY-MM-DD): ")
+        cursor.execute("""
+            INSERT INTO Ingresos (codigo_paciente, codigo_medico, numero_habitacion, numero_cama, fecha_ingreso)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (codigo_paciente, codigo_medico, numero_habitacion, numero_cama, fecha_ingreso))
+        cursor.connection.commit()
+        print("Ingreso registrado correctamente.")
+    except psycopg2.Error as e:
+        print("Error:")
+    input("pulse ENTER para continuar")
 
 def mostrar_pacientes(cursor):
     os.system("cls")
